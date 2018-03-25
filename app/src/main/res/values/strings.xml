@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">ToDoList-K</string>
     <string name="action_settings">Settings</string>
+    <string name="add_entry_message">Please enter your task</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
 </resources>
