@@ -1,6 +1,8 @@
 package holgus103.todolist_k
 
 import android.app.Application
+import android.provider.ContactsContract
+import holgus103.todolist_k.db.DatabaseHelper
 import holgus103.todolist_k.db.dao.EntryDao
 
 /**
@@ -8,14 +10,29 @@ import holgus103.todolist_k.db.dao.EntryDao
  */
 class ToDoListK : Application(){
 
+//    private object Holder { val INSTANCE = ToDoListK()}
     companion object {
-        lateinit var instance: ToDoListK
+        lateinit var ins: ToDoListK;
+        val instance : ToDoListK
+            get() {
+                return ins!!;
+            }
+
+        }
+
+    init{
+        ins = this
     }
 
-    init {
-        instance = this;
+    lateinit var helper: DatabaseHelper;
+    lateinit var dao: EntryDao;
+
+    override fun onCreate() {
+        super.onCreate()
+        this.helper = DatabaseHelper(this)
+        this.dao = EntryDao(this.helper);
     }
 
-    val dao = EntryDao();
+
 
 }

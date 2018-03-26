@@ -7,7 +7,7 @@ import holgus103.todolist_k.db.DatabaseHelper
 /**
  * Created by holgus103 on 25/03/18.
  */
-class EntryDao{
+class EntryDao(helper : DatabaseHelper){
 
     companion object {
         lateinit var dao: Dao<Entry, Int>
@@ -18,7 +18,7 @@ class EntryDao{
     }
 
     init {
-        dao = DatabaseHelper.instance.getDao(Entry::class.java)
+        dao = helper.getDao(Entry::class.java)
     }
 
     fun add(entry: Entry){
