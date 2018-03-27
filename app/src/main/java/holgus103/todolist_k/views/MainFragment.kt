@@ -3,6 +3,7 @@ package holgus103.todolist_k.views
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -134,13 +135,15 @@ class MainFragment : android.app.Fragment() {
     private var data: MutableList<Entry>? = null;
 
     private fun refreshData() {
-        recycler_view.adapter = RecycleViewAdapter(ToDoListK.instance.dao.getAllOrdered(EntryDao.TITLE)!!);
+        val m = PreferenceManager.getDefaultSharedPreferences(this.activity);
+        val column = m.getString(getString(R.string.sorting_key), EntryDao.TITLE)
+        recycler_view.adapter = RecycleViewAdapter(ToDoListK.instance.dao.getAllOrdered(column)!!);
     }
 
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         this.fab.setOnClickListener { v-> this.addNewEntry(v) }
-        recycler_view.adapter = RecycleViewAdapter(ToDoListK.instance.dao.getAllOrdered(EntryDao.TITLE)!!);
+        this.refreshData();
         recycler_view.setHasFixedSize(true);
         recycler_view.layoutManager = LinearLayoutManager(this.activity);
 

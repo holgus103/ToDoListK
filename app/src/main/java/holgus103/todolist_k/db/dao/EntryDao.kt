@@ -1,5 +1,6 @@
 package holgus103.todolist_k.db.dao
 
+import android.preference.PreferenceManager
 import android.support.v7.widget.RecyclerView
 import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.stmt.QueryBuilder

@@ -5,7 +5,8 @@
         android:title="@string/preference_title">
 
         <ListPreference
-            android:key="list_preference"
+            android:defaultValue="@string/title_val"
+            android:key="@string/sorting_key"
             android:title="@string/sort_title"
             android:dialogTitle="@string/dialog_title_list_preference"
             android:entries="@array/entries_list_preference"
