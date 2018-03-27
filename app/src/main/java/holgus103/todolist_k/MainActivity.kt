@@ -3,45 +3,75 @@ package holgus103.todolist_k
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.*
 import android.widget.CheckBox
+import android.widget.CompoundButton
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import holgus103.todolist_k.db.dao.Entry
 import holgus103.todolist_k.db.dao.EntryDao
-
+import holgus103.todolist_k.dialogs.AddEntryDialog
+import holgus103.todolist_k.dialogs.ConfirmDeletionDialog
+import holgus103.todolist_k.views.EntryView
 import kotlinx.android.synthetic.main.activity_main.*
 import org.w3c.dom.Text
 
-class MainActivity : AppCompatActivity(), DialogInterface.OnClickListener {
+class MainActivity : AppCompatActivity() {
 
 
     private class ViewHolder(val v : View) : RecyclerView.ViewHolder(v) {
 
         val title = v.findViewById<TextView>(R.id.title);
         val done = v.findViewById<CheckBox>(R.id.done);
+        val view = v as EntryView;
+
 
     }
 
-    private class RecycleViewAdapter(data: List<Entry>) : RecyclerView.Adapter<ViewHolder>(), View.OnTouchListener {
+    private inner class RecycleViewAdapter(data: List<Entry>) : RecyclerView.Adapter<ViewHolder>(), View.OnTouchListener, CompoundButton.OnCheckedChangeListener {
+
+        override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+            if(buttonView?.parent is EntryView){
+                val p = buttonView?.parent as EntryView
+                val entry = this.data[p.index];
+                entry.done = isChecked;
+                ToDoListK.instance.dao.update(entry);
+            }
+        }
+
+        private var pressDownTime: Long = 0;
 
         override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-            when(event.action){
-//                this.timer
+            if(v is TextView){
+                when (event!!.action) {
+                    MotionEvent.ACTION_DOWN -> this.pressDownTime = System.currentTimeMillis()
+                    MotionEvent.ACTION_UP -> {
+                        if (System.currentTimeMillis() - pressDownTime > TIMEOUT) {
+                            if(v.parent is EntryView) {
+                                val p = v.parent as EntryView;
+                                this@MainActivity.deleteEntry(this.data[p.index]);
+                            }
+                        }
+                    }
+                }
+                return true;
             }
+            return false;
         }
 
         var data = data;
 
         override fun onBindViewHolder(holder: ViewHolder?, position: Int) {
-            holder?.title!!.text = this.data[position].title;
-            holder?.title!!.setOnTouchListener(this)
-            holder?.done!!.isChecked == this.data[position].done;
+            if(holder?.v is EntryView) {
+                holder?.title!!.text = this.data[position].title;
+                holder?.view.index = position;
+                holder?.title!!.setOnTouchListener(this)
+                holder?.done.setOnCheckedChangeListener(this)
+                holder?.done!!.isChecked = this.data[position].done;
+            }
         }
 
         override fun getItemCount() = data.size;
@@ -53,6 +83,20 @@ class MainActivity : AppCompatActivity(), DialogInterface.OnClickListener {
                             .inflate(R.layout.entry, parent, false)
             )
 
+    }
+
+    private fun deleteEntry(entry: Entry) {
+        ConfirmDeletionDialog(this,
+                R.string.delete_message_title,
+                {
+                    ToDoListK.instance.dao.delete(entry);
+                    this.refreshData()
+                }
+        ).show()
+    }
+
+    companion object {
+        const val TIMEOUT = 1000;
     }
 
     private var tx: EditText? = null;
@@ -91,22 +135,14 @@ class MainActivity : AppCompatActivity(), DialogInterface.OnClickListener {
     }
 
     fun addNewEntry(v: View){
-        this.tx = EditText(this);
-        AlertDialog.Builder(this)
-                .setMessage(getString(R.string.add_entry_message))
-                .setView(tx)
-                .setPositiveButton(getString(R.string.ok), this)
-                .setNegativeButton(getString(R.string.cancel), this)
-                .show()
-    }
-
-    override fun onClick(dialog: DialogInterface?, which: Int) {
-        when(which){
-            DialogInterface.BUTTON_POSITIVE -> {
-                ToDoListK.instance.dao.add(Entry(title = tx?.text.toString()))
-                this.refreshData();
-            }
-            DialogInterface.BUTTON_NEGATIVE -> dialog?.cancel();
-        }
+        AddEntryDialog(this,
+                R.string.add_entry_message,
+                { c ->
+                    if(c is AddEntryDialog) {
+                        ToDoListK.instance.dao.add(Entry(title = c.tx?.text.toString()));
+                        this.refreshData()
+                    }
+                }
+        ).show();
     }
 }
