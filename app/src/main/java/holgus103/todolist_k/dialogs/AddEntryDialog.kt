@@ -20,7 +20,7 @@ class AddEntryDialog(ctx: Context, value: String, msg: Int, successCallback : (c
     override fun createView() {
         this.tx = EditText(this.ctx);
         this.tx!!.text = SpannableStringBuilder(value);
-        this.tx!!.left = 16;
+        this.tx!!.setPaddingRelative(32, 0, 0, 0);
     }
 
     val value = value;

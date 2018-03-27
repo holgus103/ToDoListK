@@ -1,6 +1,7 @@
 package holgus103.todolist_k.views
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
@@ -63,17 +64,16 @@ class MainFragment : android.app.Fragment() {
         private var pressDownTime: Long = 0;
 
         override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-            if(v is TextView){
+            if(v is EntryView){
                 when (event!!.action) {
                     MotionEvent.ACTION_DOWN -> this.pressDownTime = System.currentTimeMillis()
                     MotionEvent.ACTION_UP -> {
-                        if(v.parent is EntryView) {
-                            val p = v.parent as EntryView;
+                        if(v is EntryView) {
                             if (System.currentTimeMillis() - pressDownTime > TIMEOUT) {
-                                this@MainFragment.deleteEntry(this.data[p.index]);
+                                this@MainFragment.deleteEntry(this.data[v.index]);
                             }
                             else{
-                                this@MainFragment.editEntry(this.data[p.index])
+                                this@MainFragment.editEntry(this.data[v.index])
                             }
                         }
                     }
@@ -89,7 +89,7 @@ class MainFragment : android.app.Fragment() {
             if(holder?.v is EntryView) {
                 holder?.title!!.text = this.data[position].title;
                 holder?.view.index = position;
-                holder?.title!!.setOnTouchListener(this)
+                holder?.view!!.setOnTouchListener(this)
                 holder?.done.setOnCheckedChangeListener(this)
                 holder?.done!!.isChecked = this.data[position].done;
             }
@@ -141,6 +141,10 @@ class MainFragment : android.app.Fragment() {
     }
 
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this.activity);
+        prefs.registerOnSharedPreferenceChangeListener({ _, _->
+            this.refreshData();
+        })
         super.onViewCreated(view, savedInstanceState)
         this.fab.setOnClickListener { v-> this.addNewEntry(v) }
         this.refreshData();
@@ -174,23 +178,6 @@ class MainFragment : android.app.Fragment() {
 
 
     companion object {
-        const val TIMEOUT = 1000;
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment MainFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-                MainFragment().apply {
-                    arguments = Bundle().apply {
-                        putString(ARG_PARAM1, param1)
-                        putString(ARG_PARAM2, param2)
-                    }
-                }
+        const val TIMEOUT = 500;
     }
 }

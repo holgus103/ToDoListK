@@ -16,6 +16,7 @@ class ConfirmDeletionDialog(ctx: Context, msg: Int, successCallback : (c: Custom
 
     override fun createView() {
         this.v = TextView(this.ctx);
+        this.v?.setPadding(32, 0, 0, 0);
         this.v?.text = this.ctx.getString(R.string.delete_message);
     }
 

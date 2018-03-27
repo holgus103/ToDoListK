@@ -11,6 +11,7 @@ import android.widget.TextView
 class EntryView : LinearLayout {
     var index: Int = 0;
 
+
     constructor(ctx: Context) : super(ctx)
 
     constructor(ctx: Context, att: AttributeSet) : super(ctx, att)
