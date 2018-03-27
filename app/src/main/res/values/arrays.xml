@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="entryvalues_list_preference">
+        <item>
+            title
+        </item>
+        <item>created</item>
+        <item>done</item>
+    </string-array>
+    <string-array name="entries_list_preference">
+        <item>Title</item>
+        <item>Created on </item>
+        <item>Done</item>
+    </string-array>
+</resources>

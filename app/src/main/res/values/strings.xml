@@ -6,4 +6,10 @@
     <string name="cancel">Cancel</string>
     <string name="delete_message">Are you sure you wish to delete this item?</string>
     <string name="delete_message_title">Remove item</string>
+    <string name="preference_title">Settings</string>
+    <string name="sort_title">Sort enties by</string>
+    <string name="dialog_title_list_preference">Select a column</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

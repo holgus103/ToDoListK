@@ -15,6 +15,7 @@ import holgus103.todolist_k.db.dao.Entry
 import holgus103.todolist_k.db.dao.EntryDao
 import holgus103.todolist_k.dialogs.AddEntryDialog
 import holgus103.todolist_k.dialogs.ConfirmDeletionDialog
+import holgus103.todolist_k.views.AppSettingsFragment
 import holgus103.todolist_k.views.EntryView
 import kotlinx.android.synthetic.main.activity_main.*
 import org.w3c.dom.Text
@@ -49,10 +50,13 @@ class MainActivity : AppCompatActivity() {
                 when (event!!.action) {
                     MotionEvent.ACTION_DOWN -> this.pressDownTime = System.currentTimeMillis()
                     MotionEvent.ACTION_UP -> {
-                        if (System.currentTimeMillis() - pressDownTime > TIMEOUT) {
-                            if(v.parent is EntryView) {
-                                val p = v.parent as EntryView;
+                        if(v.parent is EntryView) {
+                            val p = v.parent as EntryView;
+                            if (System.currentTimeMillis() - pressDownTime > TIMEOUT) {
                                 this@MainActivity.deleteEntry(this.data[p.index]);
+                            }
+                            else{
+                                this@MainActivity.editEntry(this.data[p.index])
                             }
                         }
                     }
@@ -83,6 +87,20 @@ class MainActivity : AppCompatActivity() {
                             .inflate(R.layout.entry, parent, false)
             )
 
+    }
+
+    private fun editEntry(entry: Entry) {
+        AddEntryDialog(this,
+                entry.title,
+                R.string.add_entry_message,
+                { c ->
+                    if(c is AddEntryDialog) {
+                        entry.title = c.tx!!.text.toString();
+                        ToDoListK.instance.dao.update(entry);
+                        this.refreshData()
+                    }
+                }
+        ).show();
     }
 
     private fun deleteEntry(entry: Entry) {
@@ -129,13 +147,18 @@ class MainActivity : AppCompatActivity() {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_settings -> {
+                fragmentManager.beginTransaction()
+                        .replace(android.R.id.content, AppSettingsFragment()).commit()
+                true;
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
     fun addNewEntry(v: View){
         AddEntryDialog(this,
+                "",
                 R.string.add_entry_message,
                 { c ->
                     if(c is AddEntryDialog) {
