@@ -4,11 +4,23 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-
+import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.EditText
+import android.widget.TextView
 import holgus103.todolist_k.R
+import holgus103.todolist_k.ToDoListK
+import holgus103.todolist_k.db.dao.Entry
+import holgus103.todolist_k.db.dao.EntryDao
+import holgus103.todolist_k.dialogs.AddEntryDialog
+import holgus103.todolist_k.dialogs.ConfirmDeletionDialog
+import kotlinx.android.synthetic.main.fragment_main.*
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -24,19 +36,132 @@ private const val ARG_PARAM2 = "param2"
  * create an instance of this fragment.
  *
  */
-class MainFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-    private var listener: OnFragmentInteractionListener? = null
+class MainFragment : android.app.Fragment() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+
+    private class ViewHolder(val v : View) : RecyclerView.ViewHolder(v) {
+
+        val title = v.findViewById<TextView>(R.id.title);
+        val done = v.findViewById<CheckBox>(R.id.done);
+        val view = v as EntryView;
+
+
     }
+
+    private inner class RecycleViewAdapter(data: List<Entry>) : RecyclerView.Adapter<ViewHolder>(), View.OnTouchListener, CompoundButton.OnCheckedChangeListener {
+
+        override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+            if(buttonView?.parent is EntryView){
+                val p = buttonView?.parent as EntryView
+                val entry = this.data[p.index];
+                entry.done = isChecked;
+                ToDoListK.instance.dao.update(entry);
+            }
+        }
+
+        private var pressDownTime: Long = 0;
+
+        override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+            if(v is TextView){
+                when (event!!.action) {
+                    MotionEvent.ACTION_DOWN -> this.pressDownTime = System.currentTimeMillis()
+                    MotionEvent.ACTION_UP -> {
+                        if(v.parent is EntryView) {
+                            val p = v.parent as EntryView;
+                            if (System.currentTimeMillis() - pressDownTime > TIMEOUT) {
+                                this@MainFragment.deleteEntry(this.data[p.index]);
+                            }
+                            else{
+                                this@MainFragment.editEntry(this.data[p.index])
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        var data = data;
+
+        override fun onBindViewHolder(holder: ViewHolder?, position: Int) {
+            if(holder?.v is EntryView) {
+                holder?.title!!.text = this.data[position].title;
+                holder?.view.index = position;
+                holder?.title!!.setOnTouchListener(this)
+                holder?.done.setOnCheckedChangeListener(this)
+                holder?.done!!.isChecked = this.data[position].done;
+            }
+        }
+
+        override fun getItemCount() = data.size;
+
+        override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ViewHolder =
+                ViewHolder(
+                        LayoutInflater
+                                .from(parent!!.context)
+                                .inflate(R.layout.entry, parent, false)
+                )
+
+    }
+
+    private fun editEntry(entry: Entry) {
+        AddEntryDialog(this.activity,
+                entry.title,
+                R.string.add_entry_message,
+                { c ->
+                    if(c is AddEntryDialog) {
+                        entry.title = c.tx!!.text.toString();
+                        ToDoListK.instance.dao.update(entry);
+                        this.refreshData()
+                    }
+                }
+        ).show();
+    }
+
+    private fun deleteEntry(entry: Entry) {
+        ConfirmDeletionDialog(this.activity,
+                R.string.delete_message_title,
+                {
+                    ToDoListK.instance.dao.delete(entry);
+                    this.refreshData()
+                }
+        ).show()
+    }
+
+    private var tx: EditText? = null;
+
+    private var data: MutableList<Entry>? = null;
+
+    private fun refreshData() {
+        recycler_view.adapter = RecycleViewAdapter(ToDoListK.instance.dao.getAllOrdered(EntryDao.TITLE)!!);
+    }
+
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        this.fab.setOnClickListener { v-> this.addNewEntry(v) }
+        recycler_view.adapter = RecycleViewAdapter(ToDoListK.instance.dao.getAllOrdered(EntryDao.TITLE)!!);
+        recycler_view.setHasFixedSize(true);
+        recycler_view.layoutManager = LinearLayoutManager(this.activity);
+
+    }
+
+
+    fun addNewEntry(v: View){
+        AddEntryDialog(this.activity,
+                "",
+                R.string.add_entry_message,
+                { c ->
+                    if(c is AddEntryDialog) {
+                        ToDoListK.instance.dao.add(Entry(title = c.tx?.text.toString()));
+                        this.refreshData();
+                        this.view.requestFocus();
+                    }
+                }
+        ).show();
+    }
+
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -44,42 +169,9 @@ class MainFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_main, container, false)
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    fun onButtonPressed(uri: Uri) {
-        listener?.onFragmentInteraction(uri)
-    }
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is OnFragmentInteractionListener) {
-            listener = context
-        } else {
-            throw RuntimeException(context.toString() + " must implement OnFragmentInteractionListener")
-        }
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     *
-     *
-     * See the Android Training lesson [Communicating with Other Fragments]
-     * (http://developer.android.com/training/basics/fragments/communicating.html)
-     * for more information.
-     */
-    interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        fun onFragmentInteraction(uri: Uri)
-    }
 
     companion object {
+        const val TIMEOUT = 1000;
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
